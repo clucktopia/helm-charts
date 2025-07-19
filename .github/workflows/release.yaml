@@ -37,7 +37,7 @@ jobs:
 
   sync-pages:
     needs: release
-    if: steps.mdcheck.outputs.changed == "true"
+    if: steps.mdcheck.outputs.changed == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-latest
