@@ -21,14 +21,43 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Update Pages
+      - name: Check .md files for changes
+        id: mdcheck
         run: |
-          cp *.md gh-pages/
-          git add *.md
-          git commit -m "Update pages"
-          git push origin gh-pages
+          if git diff --name-only HEAD^ HEAD | grep -q '\.md$'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Release Charts
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  sync-pages:
+    needs: release
+    if: steps.mdcheck.outputs.changed == "true"
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Sync .md files
+        run: |
+          cp *.md gh-pages/
+          cd gh-pages/
+          git add *.md
+          git commit -m "Update pages"
+          git push origin gh-pages
