@@ -21,7 +21,14 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Run chart-releaser
+      - name: Update Pages
+        run: |
+          cp *.md gh-pages/
+          git add *.md
+          git commit -m "Update pages"
+          git push origin gh-pages
+
+      - name: Release Charts
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
