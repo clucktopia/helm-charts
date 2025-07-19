@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels: {{- include "minecraft-exporter.labels" . | nindent 4 }}
+  name: {{ include "minecraft-exporter.fullname" . }}
+spec:
+  ports:
+  - name: metrics
+    port: {{ .Values.config.port }}
+    protocol: TCP
+    targetPort: metrics
+  selector: {{- include "minecraft-exporter.selectorLabels" . | nindent 4 }}
+  type: ClusterIP

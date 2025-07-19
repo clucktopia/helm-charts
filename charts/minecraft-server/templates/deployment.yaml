@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {{- include "minecraft.common.labels" . | nindent 4 }}
+  name: {{ include "minecraft.common.fullname" . }}
+spec:
+  replicas: 1
+  {{- if .Values.strategy }}
+  strategy: {{- toYaml .Values.strategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "minecraft.common.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "minecraft.common.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity: {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.podSecurityContext }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      {{- if .Values.initContainers }}
+      initContainers: {{- toYaml .Values.initContainers | nindent 8 }}
+      {{- end }}
+      containers:
+        {{- include "minecraft.containers.server" . | indent 8 }}
+        {{- if eq ( include "minecraft.common.isBackupEnabled" . ) "true" }}
+        {{- include "minecraft.containers.backup" . | indent 8 }}
+        {{- end }}
+        {{- if eq .Values.metrics.enabled "true" }}
+        {{- include "minecraft.containers.metrics" . | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: tmpdir
+          emptyDir: {}
+        - name: datadir
+          {{- toYaml .Values.persistence | nindent 10 }}
+        {{- if eq ( include "minecraft.common.isBackupEnabled" . ) "true" }}
+        - name: backupdir
+          {{- toYaml .Values.backup.persistence | nindent 10 }}
+        {{-   if eq .Values.backup.config.type "rclone" }}
+        - name: rcloneconfig
+          secret:
+            secretName: {{ include "minecraft.common.rcloneSecretName" . }}
+            items:
+              - key: {{ include "minecraft.common.rcloneSecretKey" . }}
+                path: rclone.conf
+        {{-   end }}
+        {{- end }}

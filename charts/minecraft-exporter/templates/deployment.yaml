@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {{- include "minecraft-exporter.labels" . | nindent 4 }}
+  name: {{ include "minecraft-exporter.fullname" . }}
+spec:
+  selector:
+    matchLabels: {{- include "minecraft-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "minecraft-exporter.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ . | toYaml }}
+      {{- end }}
+      containers:
+        - name: mc-monitor
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.resources }}
+          resources: {{- toYaml . | nindent 4 }}
+          {{- end }}
+          env:
+          {{- with .Values.config }}
+            - name: EXPORT_SERVERS
+              value: {{ join "," .servers | toYaml }}
+            - name: EXPORT_BADROCK_SERVERS
+              value: {{ join "," .bedrockServers | toYaml }}
+            - name: EXPORT_PORT
+              value: {{ .port | toYaml }}
+            - name: TIMEOUT
+              value: {{ .timeout | toYaml }}
+          {{- end }}
+          args: ["export-for-prometheus"]
+          ports:
+            - containerPort: {{ .Values.config.port | toYaml }}
+              name: metrics
+              protocol: TCP

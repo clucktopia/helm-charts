@@ -1,0 +1,90 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: "itzg/mc-proxy"
+  tag: "latest"
+  pullPolicy: "IfNotPresent"
+
+restartPolicy: Always
+
+nodeSelector: {}
+
+tolerations: {}
+
+affinity: {}
+
+resources: {}
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
+  readOnlyRootFilesystem: true
+
+extraEnv: []
+
+# extraVolumes: {}
+
+# extraVolumeMounts: {}
+
+# extraPorts: []
+
+# configMaps: {}
+
+# secrets: {}
+
+# Configuration for the Minecraft proxy server
+# ref: https://github.com/itzg/docker-mc-proxy?tab=readme-ov-file#optional-environment-settings
+proxy:
+  # Common types are "bungee", "waterfall", "velocity", "custom"
+  type: "velocity"
+  networkAddressCacheTTL: 60
+
+  # If type is "bungee" or "waterfall"
+  jenkinsBaseUrl: ""
+  jenkinsJobId: "lastStableBuild"
+
+  # If type is "waterfall"
+  waterfallVersion: ""
+  waterfallBuildId: ""
+
+  # If type is "velocity"
+  velocityVersion: ""
+  velocityBuildId: ""
+
+  # If type is "custom"
+  jarUrl: ""
+
+  # Configuration file for the proxy server
+  config: |
+    config-version = "1.0"
+    bind = "0.0.0.0:25577"
+    motd = "A Velocity Proxy Server"
+    show-max-players = 500
+    online-mode = true
+    prevent-client-proxy-connections = false
+    player-info-forwarding-mode = "modern"
+    forwarding-secret-file = "/velocity/forwarding.key"
+    announce-forge = false
+    kick-existing-players = false
+    ping-passthrough = "all"
+    [servers]
+    lobby = "127.0.0.1:30066"
+    try = [
+      "lobby"
+    ]
+    [forced-hosts]
+    "lobby.example.com" = [
+      "lobby"
+    ]

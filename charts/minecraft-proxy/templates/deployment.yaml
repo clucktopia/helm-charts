@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels: {{- include "minecraft-proxy.labels" . | nindent 4 }}
+  name: {{ include "minecraft-proxy.fullname" . }}
+spec:
+  selector:
+    matchLabels: {{- include "minecraft-proxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "minecraft-proxy.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ . | toYaml }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mc-proxy
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext: {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources: {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          env:
+            - name: "INIT_MEMORY"
+              valueFrom:
+                resourceFieldRef:
+                  containerName: server
+                  resource: requests.memory
+            - name: "MAX_MEMORY"
+              valueFrom:
+                resourceFieldRef:
+                  containerName: server
+                  resource: limits.memory
+
+            {{- with .Values.extraEnv }}
+            {{- . | toYaml | nindent 12 }}
+            {{- end }}
+
+            {{- with .Values.proxy }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "TYPE" "value" .type ) | indent 12 }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "NETWORK_ADDRESS_CACHE_TTL" "value" .networkAddressCacheTTL ) | indent 12 }}
+
+            {{- if or ( eq .type "bungee" ) ( eq .type "waterfall" ) }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "BUNGEE_BASE_URL" "value" .jenkinsBaseUrl ) | indent 12 }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "BUNGEE_JOB_ID" "value" .jenkinsJobId ) | indent 12 }}
+            {{- end }}
+
+            {{-   if eq .type "waterfall" }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "WATERFALL_VERSION" "value" .waterfallVersion ) | indent 12 }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "WATERFALL_BUILD_ID" "value" .waterfallBuildId ) | indent 12 }}
+            {{-   end }}
+
+            {{-   if eq .type "velocity" }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "VELOCITY_VERSION" "value" .velocityVersion ) | indent 12 }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "VELOCITY_BUILD_ID" "value" .velocityBuildId ) | indent 12 }}
+            {{-   end }}
+
+            {{-   if eq .type "custom" }}
+            {{- include "minecraft-proxy.utils.envMap" ( dict "key" "BUNGEE_JAR_URL" "value" .jarUrl ) | indent 10 }}
+            {{-   end }}
+
+            {{- end }}
+          ports:
+            - name: http
+              port: 25577
+              protocol: TCP
+              targetPort: http
+          volumeMounts:
+            - name: server-volume
+              mountPath: /server
+            - name: config-volume
+              mountPath: /config
+            {{- if eq .Values.proxy.type "velocity" }}
+            - name: velocity-secret
+              mountPath: /secrets/velocity
+            {{- end }}
+      volumes:
+        - name: server-volume
+          emptyDir: {}
+        - name: config-volume
+          configMap:
+            name: {{ include "minecraft-proxy.fullname" . }}
+        {{- if eq .Values.proxy.type "velocity" }}
+        - name: velocity-secret
+          secret:
+            secretName: {{ include "minecraft-proxy.fullname" . }}-velocity
+        {{- end }}

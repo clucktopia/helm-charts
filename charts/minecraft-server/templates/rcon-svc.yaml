@@ -1,0 +1,17 @@
+{{- $rcon := .Values.rcon -}}
+
+{{- if eq ( include "minecraft.common.isRconEnabled" . ) "true" }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels: {{- include "minecraft.common.labels" . | nindent 4 }}
+  name: {{ include "minecraft.common.rconName" . }}
+spec:
+  ports:
+  - name: rcon
+    port: {{ $rcon.port }}
+    protocol: TCP
+    targetPort: rcon
+  selector: {{- include "minecraft.common.selectorLabels" . | nindent 4 }}
+  type: ClusterIP
+{{- end }}

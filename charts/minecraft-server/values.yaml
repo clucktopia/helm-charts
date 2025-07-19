@@ -1,0 +1,319 @@
+# Override the name of the chart or the full name of resources
+nameOverride: ""
+fullnameOverride: ""
+
+# Docker image configuration for the Minecraft server
+image:
+  repository: "itzg/minecraft-server"
+  tag: "latest"
+  pullPolicy: "IfNotPresent"
+
+# Pod restart policy and update strategy
+restartPolicy: Always
+strategy:
+  type: "Recreate"
+
+# Resource limits for the Minecraft server container
+resources:
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+# Kubernetes node scheduling options
+nodeSelector: {}
+tolerations: {}
+affinity: {}
+
+# Pod-level security context settings
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context settings
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+# Additional containers and lifecycle hooks
+initContainers: []
+lifecycle:
+  postStart: []
+  preStop: []
+
+# Storage configuration for the server
+persistence:
+  emptyDir: {}
+
+# Health probes for startup, liveness, and readiness
+startupProbe:
+  exec:
+    command:
+      - mc-health
+  failureThreshold: 10
+  initialDelaySeconds: 30
+livenessProbe:
+  exec:
+    command:
+      - mc-health
+  failureThreshold: 10
+readinessProbe:
+  exec:
+    command:
+      - mc-health
+  failureThreshold: 10
+
+# Additional environment variables, volumes and ports configuration
+env: []
+volumes: []
+volumeMounts: []
+ports: []
+
+server:
+  # Minecraft server type and version configuration
+  # Common types: vanilla, fabric, forge, neoforge, sponge, limbo, nanolimbo, papper, quilt, ftba
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/
+  type: "vanilla"
+  versions:
+    minecraftLauncher: "latest"
+
+    # Platform-specific options
+    # If server.type is "fabric"
+    fabricLauncher: ""
+    fabricLoader: ""
+    fabricLauncherUrl: ""
+
+    # If server.type is "forge"
+    forgeLauncher: ""
+    forgeInstallerUrl: ""
+
+    # If server.type is "neoforge"
+    neoforgeLauncher: ""
+
+    # If server.type is "sponge"
+    spongeVersion: ""
+    spongeBranch: ""
+
+    # If server.type is "limbo" or "nanolimbo"
+    limboBuild: ""
+
+    # If server.type is "papper"
+    papperBuild: ""
+    papperChannel: ""
+    papperDownloadUrl: ""
+
+    # If server.type is "quilt"
+    quiltLoader: ""
+    quiltInstaller: ""
+
+    # If server.type is "ftba"
+    ftbModpackId: ""
+    ftbModpackVersionId: ""
+    ftbForceReinstall: "false"
+
+  # Minecraft server properties
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/variables/#server
+  properties:
+    # NOTE: you have to accept the EULA to start the server
+    eula: "false"
+    levelName: "world"
+    motd: "Welcome to Minecraft Server in Kubernetes!"
+
+    gamemode: "survival"
+    difficulty: "easy"
+    hardcore: "false"
+    pvp: "true"
+    levelSeed: ""
+    levelType: "minecraft:normal"
+    generateStructures: "true"
+    enableCommandBlock: "false"
+    allowFlight: "false"
+    allowNether: "true"
+    spawnMonsters: "true"
+    spawnNpcs: "true"
+    spawnAnimals: "true"
+    spawnProtection: 16
+
+    maxPlayers: 20
+    maxWorldSize: ""
+    viewDistance: 10
+    simulationDistance: 10
+
+    enableStatus: "true"
+    onlineMode: "true"
+    useNativeTransport: "true"
+    preventProxyConnections: "false"
+
+    networkCompressionThreshold: 256
+    enableJmxMonitoring: "false"
+    syncChunkWrites: "true"
+    entityBroadcastRangePercentage: 100
+    playerIdleTimeout: 0
+
+    opPermissionLevel: 4
+    functionPermissionLevel: 2
+    broadcastRconToOps: "false"
+    forceGamemode: "false"
+
+    resourcePack: ""
+    resourcePackSha1: ""
+    resourcePackEnforce: "false"
+
+    enableWhitelist: "false"
+    whitelist: []
+    whitelistFile: ""
+
+  # Asset management configuration for mods and plugins
+  # Common types: none, packwiz, modrinth, curseforge, spiget, ftba
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/mods-and-plugins/
+  assets:
+    type: "none"
+    source:
+      # If assets.type is packwiz
+      packwizUrl: ""
+
+      # If assets.type is modrinth
+      modrinthProjects: []
+      modrinthDownloadDependencies: "none"
+      modrinthAllowVersionType: "release"
+
+      # If assets.type is curseforge
+      curseforgeFiles: []
+
+      # Your CurseForge API key
+      # IMPORTANT: for security reasons, avoid hardcoding the key here.
+      # Instead, use an existing Kubernetes Secret to store the API key securely.
+      curseforgeApiKey: ""
+      curseforgeExistingSecret: ""
+      curseforgeExistingSecretKey: ""
+
+      # If assets.type is spiget
+      spigetResources: []
+
+# RCON remote console configuration
+rcon:
+  enabled: "true"
+  port: 25575
+
+  # Your RCON password
+  # IMPORTANT: for security reasons, avoid hardcoding the password here.
+  # Instead, use an existing Kubernetes Secret to store the password securely.
+  password: ""
+  exsistingSecret: ""
+  exsistingSecretKey: ""
+
+# Backup configuration
+# IMPORTANT: you must set rcon.enabled to true if you want to use backup
+backup:
+  enabled: "false"
+
+  image:
+    repository: "itzg/mc-backup"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+
+  persistence:
+    emptyDir: {}
+
+  env: []
+
+  # ref: https://github.com/itzg/docker-mc-backup
+  config:
+    backupName: "world"
+    backupInterval: "2h"
+    backupOnStartup: "true"
+    initialDelay: "2m"
+
+    pauseIfNoPlayers: "true"
+    playersOnlineCheckInterval: "5m"
+
+    pruneBackupsDays: 7
+    pruneBackupsCount: ""
+
+    rconRetries: 5
+    rconRetryInterval: "5s"
+
+    enableSaveAll: "true"
+    enableSync: "true"
+
+    includes: "."
+    excludes:
+      - "*.jar"
+      - "cache"
+      - "logs"
+      - "*.tmp"
+
+    zstdParameters:
+      - "-3"
+      - "--long=25"
+      - "--single-thread"
+
+    linkLatest: "true"
+
+    # Common types: tar, rsync, restic, rclone
+    type: "tar"
+
+    # If config.type is tar
+    tarCompressMethod: "gzip"
+
+    # If config.type is rclone
+    rcloneRemote: "[remote]"
+    rcloneCompressMethod: "gzip"
+    rcloneDestDir: ""
+
+    # Your Rclone configuration
+    # IMPORTANT: for security reasons, avoid hardcoding the configuration here.
+    # Instead, use an existing Kubernetes Secret to store the configuration securely.
+    rcloneConfig: ""
+    # rcloneConfig: |-
+    #   [remote]
+    #   type = google cloud storage
+    #   client_id =
+    #   client_secret =
+    #   token = {"AccessToken":"super","RefreshToken":"secret","Expiry":"date","Extra":null}
+    #   project_number = 12345678
+    #   object_acl = private
+    #   bucket_acl = private
+    rcloneExistingSecret: ""
+    rcloneExistingSecretKey: ""
+
+    # If config.type is restic
+    resticRepository: ""
+    resticAdditionalTags:
+      - "backup"
+      - "minecraft"
+    resticPruneAttention: "--keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 75"
+
+    # Your Restic password
+    # IMPORTANT: for security reasons, avoid hardcoding the password here.
+    # Instead, use an existing Kubernetes Secret to store the password securely.
+    resticPassword: ""
+    resticExistingSecret: ""
+    resticExistingSecretKey: ""
+
+# Run a prometheus metrics exporter
+metrics:
+  enabled: "false"
+
+  image:
+    repository: "itzg/mc-monitor"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  env: []
