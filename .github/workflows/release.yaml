@@ -32,22 +32,31 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: main
+
+      - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: gh-pages
           path: gh-pages
 
+      - name: Copy .md files
+        run: |
+          cp main/*.md gh-pages/
+
       - name: Configure Git
         run: |
+          cd gh-pages/
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Sync .md files
+      - name: Push .md files
         run: |
-          cp *.md gh-pages/
-          cd gh-pages/
           git add *.md
           git commit -m "Update pages"
           git push origin gh-pages
