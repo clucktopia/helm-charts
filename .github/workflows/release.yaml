@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-charts:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Release Charts
+        uses: helm/chart-releaser-action@v1.6.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+  release-pages:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: main
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Configure Git
+        working-directory: gh-pages/
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Update .md files
+        run: |
+          cp main/*.md gh-pages/
+
+      - name: Release Pages
+        working-directory: gh-pages/
+        run: |
+          ! git diff --quiet && {
+            git add *.md
+            git commit -m "Update pages"
+            git push origin gh-pages
+          } || {
+            echo "Nothing to release"
+          }
