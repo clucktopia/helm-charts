@@ -2,7 +2,7 @@ apiVersion: v2
 name: minecraft-lib
 description: A library Helm Chart for Minecraft Charts
 type: library
-version: 1.0.0-alpha1
+version: 1.0.0
 home: "https://github.com/clucktopia"
 sources:
   - "https://github.com/clucktopia"
