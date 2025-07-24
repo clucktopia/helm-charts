@@ -6,14 +6,14 @@ Parameters:
 - ctx (dict, required): Context variables for template rendering.
 - scope (dict, optional): Additional scope to merge with the context.
 */}}
-{{- define "lib.utilsrenderTpl" -}}
+{{- define "lib.utils.renderTpl" -}}
 {{- $ctx := .ctx -}}
 
 {{- if .scope -}}
   {{- $ctx = merge ( dict "scope" .scope ) $ctx -}}
 {{- end -}}
 
-{{- println ( tpl .tpl $ctx ) -}}
+{{- print ( tpl .tpl $ctx ) -}}
 {{- end -}}
 
 {{/*
@@ -29,28 +29,10 @@ Parameters:
 {{- $yaml := toYaml .obj -}}
 
 {{- if ( eq .tpl true ) -}}
-  {{- $yaml = include "lib.utilsrenderTpl" ( dict "tpl" $yaml "ctx" .ctx "scope" .scope ) -}}
+  {{- $yaml = include "lib.utils.renderTpl" ( dict "tpl" $yaml "ctx" .ctx "scope" .scope ) -}}
 {{- end -}}
 
-{{- println $yaml -}}
-{{- end -}}
-
-{{/*
-Render a single key-value pair as a YAML field.
-
-Parameters:
-- key (string, required): The key name.
-- obj (any, required): The value to render.
-- tpl (bool, optional): If true, render the value as a template.
-- ctx (dict, optional): Context variables for template rendering.
-- scope (dict, optional): Additional scope to merge with the context.
-*/}}
-{{- define "lib.utils.toField" -}}
-{{- if .obj -}}
-  {{- $obj := ( dict .key .obj ) -}}
-  {{- $field := include "lib.utils.toYaml" ( dict "obj" $obj "tpl" .tpl "ctx" .ctx "scope" .scope ) -}}
-  {{- println $field -}}
-{{- end -}}
+{{- print $yaml -}}
 {{- end -}}
 
 {{/*
@@ -67,6 +49,6 @@ Parameters:
 {{- if .value -}}
   {{- $value := list ( dict "name" .key "value" .value ) -}}
   {{- $env := include "lib.utils.toYaml" ( dict "obj" $value "tpl" .tpl "ctx" .ctx "scope" .scope ) -}}
-  {{- println $env -}}
+  {{- print $env -}}
 {{- end -}}
 {{- end -}}
