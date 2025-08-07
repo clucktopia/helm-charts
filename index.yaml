@@ -16,4 +16,24 @@ entries:
     urls:
     - https://github.com/clucktopia/helm-charts/releases/download/minecraft-lib-1.0.0/minecraft-lib-1.0.0.tgz
     version: 1.0.0
-generated: "2025-08-07T23:16:54.472397534Z"
+  minecraft-server:
+  - apiVersion: v2
+    created: "2025-08-07T23:35:09.610504555Z"
+    dependencies:
+    - name: minecraft-lib
+      repository: https://clucktopia.github.io/helm-charts
+      version: ~1.0.0
+    description: Minecraft Server
+    digest: 32a541ea28bed3d6b6350bc0f9e346d4140740e51f6016b0464b49c623c641b0
+    home: https://github.com/clucktopia
+    maintainers:
+    - email: iveahugeship@gmail.com
+      name: iveahugeship
+    name: minecraft-server
+    sources:
+    - https://github.com/clucktopia/helm-charts
+    type: application
+    urls:
+    - https://github.com/clucktopia/helm-charts/releases/download/minecraft-server-1.0.0-alpha1/minecraft-server-1.0.0-alpha1.tgz
+    version: 1.0.0-alpha1
+generated: "2025-08-07T23:35:09.610510737Z"
