@@ -1,0 +1,31 @@
+{{- if .Values.rcon.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- if .Values.rcon.service.annotations }}
+  annotations: {{- include "lib.utils.toYaml" ( dict "obj" .Values.rcon.service.annotations "ctx" . ) | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "lib.labels.common" . | nindent 4 }}
+    {{- if .Values.service.labels }}
+      {{- include "lib.utils.toYaml" ( dict "obj" .Values.rcon.service.labels "ctx" . ) | nindent 4 }}
+    {{- end }}
+  name: {{ include "lib.names.fullname" . }}-rcon
+spec:
+  selector: {{- include "lib.labels.common" . | nindent 4 }}
+  type: {{ .Values.rcon.service.type }}
+  {{- if .Values.rcon.service.clusterIP }}
+  clusterIP: {{ .Values.rcon.service.clusterIP }}
+  {{- end }}
+  {{- if .Values.rcon.service.loadbalancerIP }}
+  loadBalancerIP: {{ .Values.rcon.service.loadbalancerIP }}
+  {{- end }}
+  ports:
+  - name: rcon
+    port: {{ .Values.rcon.service.port }}
+    {{- if .Values.rcon.service.nodePort }}
+    nodePort: {{ .Values.rcon.service.nodePort }}
+    {{- end }}
+    protocol: TCP
+    targetPort: rcon
+{{- end }}

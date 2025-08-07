@@ -1,0 +1,15 @@
+apiVersion: v2
+name: minecraft-server
+description: Minecraft Server
+type: application
+version: 1.0.0-alpha1
+home: "https://github.com/clucktopia"
+sources:
+  - "https://github.com/clucktopia/helm-charts"
+maintainers:
+  - name: iveahugeship
+    email: iveahugeship@gmail.com
+dependencies:
+  - name: minecraft-lib
+    version: ~1.0.0
+    repository: https://clucktopia.github.io/helm-charts

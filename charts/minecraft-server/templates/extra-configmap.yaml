@@ -1,0 +1,11 @@
+{{- if .Values.extraConfig -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels: {{- include "lib.labels.common" . | nindent 4 }}
+  name: {{ include "lib.names.fullname" . }}-extra
+data:
+  {{- range $k, $v := .Values.extraConfig }}
+  {{ include "lib.strings.normalize" ( dict "str" $k ) }}: {{- include "lib.utils.toYaml" ( dict "obj" $v.content "tpl" true "ctx" $ ) | indent 2 }}
+  {{- end }}
+{{- end -}}

@@ -1,0 +1,6 @@
+dependencies:
+- name: minecraft-lib
+  repository: https://clucktopia.github.io/helm-charts
+  version: 1.0.0
+digest: sha256:4f5b9169c53358f22d405923a838ae00bb4619f2bddd09be0f4f66f7683932ba
+generated: "2025-08-08T03:19:45.863166+04:00"

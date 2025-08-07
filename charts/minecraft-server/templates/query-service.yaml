@@ -1,0 +1,31 @@
+{{- if .Values.query.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- if .Values.query.service.annotations }}
+  annotations: {{- include "lib.utils.toYaml" ( dict "obj" .Values.query.service.annotations "ctx" . ) | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "lib.labels.common" . | nindent 4 }}
+    {{- if .Values.service.labels }}
+      {{- include "lib.utils.toYaml" ( dict "obj" .Values.query.service.labels "ctx" . ) | nindent 4 }}
+    {{- end }}
+  name: {{ include "lib.names.fullname" . }}-query
+spec:
+  selector: {{- include "lib.labels.common" . | nindent 4 }}
+  type: {{ .Values.query.service.type }}
+  {{- if .Values.query.service.clusterIP }}
+  clusterIP: {{ .Values.query.service.clusterIP }}
+  {{- end }}
+  {{- if .Values.query.service.loadbalancerIP }}
+  loadBalancerIP: {{ .Values.query.service.loadbalancerIP }}
+  {{- end }}
+  ports:
+  - name: query
+    port: {{ .Values.query.service.port }}
+    {{- if .Values.query.service.nodePort }}
+    nodePort: {{ .Values.query.service.nodePort }}
+    {{- end }}
+    protocol: UDP
+    targetPort: query
+{{- end }}

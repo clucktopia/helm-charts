@@ -1,0 +1,13 @@
+{{- if .Values.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels: {{- include "lib.labels.common" . | nindent 4 }}
+  name: {{ include "lib.names.fullname" . }}
+spec:
+  accessModes: {{- include "lib.utils.toYaml" ( dict "obj" .Values.persistence.accessModes ) | nindent 2 }}
+  resources: {{- include "lib.utils.toYaml" ( dict "obj" .Values.persistence.resources ) | nindent 4 }}
+  {{- if .Values.persistence.storageClassName }}
+  storageClassName: {{ include "lib.utils.toYaml" ( dict "obj" .Values.persistence.storageClassName ) }}
+  {{- end }}
+{{- end -}}

@@ -1,0 +1,13 @@
+{{- if .Values.backup.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels: {{- include "lib.labels.common" . | nindent 4 }}
+  name: {{ include "lib.names.fullname" . }}-backup
+spec:
+  accessModes: {{- include "lib.utils.toYaml" ( dict "obj" .Values.backup.persistence.accessModes ) | nindent 2 }}
+  resources: {{- include "lib.utils.toYaml" ( dict "obj" .Values.backup.persistence.resources ) | nindent 4 }}
+  {{- if .Values.backup.persistence.storageClassName }}
+  storageClassName: {{ include "lib.utils.toYaml" ( dict "obj" .Values.backup.persistence.storageClassName ) }}
+  {{- end }}
+{{- end -}}

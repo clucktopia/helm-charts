@@ -1,0 +1,419 @@
+apiVersion: apps/v1
+kind: {{ .Values.kind }}
+metadata:
+  labels: {{- include "lib.labels.common" . | nindent 4 }}
+  name: {{ include "lib.names.fullname" . }}
+spec:
+  selector:
+    matchLabels: {{- include "lib.labels.common" . | nindent 6 }}
+  replicas: {{ ternary .Values.replicas 1 ( eq .Values.kind "StatefulSet" ) }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- if .Values.strategy }}
+    {{- if eq .Values.kind "StatefulSet" }}
+  updateStrategy: {{- include "lib.utils.toYaml" ( dict "obj" .Values.strategy ) | nindent 4 }}
+    {{- else }}
+  strategy: {{- include "lib.utils.toYaml" ( dict "obj" .Values.strategy ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  template:
+    metadata:
+      labels: {{- include "lib.labels.common" . | nindent 8 }}
+    spec:
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ include "lib.utils.toYaml" ( dict "obj" . ) }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: minecraft-server
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.securityContext }}
+        securityContext: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.resources }}
+        resources: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.startupProbe }}
+        startupProbe: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.livenessProbe }}
+        livenessProbe: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
+        readinessProbe: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        env:
+        - name: INIT_MEMORY
+          valueFrom:
+            resourceFieldRef:
+              containerName: minecraft-server
+              resource: requests.memory
+        - name: MAX_MEMORY
+          valueFrom:
+            resourceFieldRef:
+              containerName: minecraft-server
+              resource: limits.memory
+        - name: SERVER_PORT
+          value: {{ .Values.service.port | quote }}
+        - name: TYPE
+          value: {{ .Values.server.type | quote }}
+        - name: VERSION
+          value: {{ .Values.server.minecraftVersion | quote }}
+        {{- if eq .Values.server.type "fabric" }}
+        - name: FABRIC_LAUNCHER_VERSION
+          value: {{ .Values.server.fabricLauncherVersion | quote }}
+        - name: FABRIC_LOADER_VERSION
+          value: {{ .Values.server.fabricLoaderVersion | quote }}
+        - name: FABRIC_LAUNCHER_URL
+          value: {{ .Values.server.fabricLauncherUrl | quote }}
+        {{- end }}
+        {{- if eq .Values.server.type "forge" }}
+        - name: FORGE_VERSION
+          value: {{ .Values.server.forgeVersion | quote }}
+        - name: FORGE_INSTALLER_URL
+          value: {{ .Values.server.forgeInstallerUrl | quote }}
+        {{- end }}
+        {{- if eq .Values.server.type "neoforge" }}
+        - name: NEOFORGE_VERSION
+          value: {{ .Values.server.neoforgeVersion | quote }}
+        {{- end }}
+        {{- if eq .Values.server.type "spongevanilla" }}
+        - name: SPONGEVERSION
+          value: {{ .Values.server.spongeVersion | quote }}
+        - name: SPONGEBRANCH
+          value: {{ .Values.server.spongeBranch | quote }}
+        {{- end }}
+        {{- if or ( eq .Values.server.type "limbo" ) ( eq .Values.server.type "nanolimbo" )}}
+        - name: LIMBO_BUILD
+          value: {{ .Values.server.limboBuild | quote }}
+        {{- end }}
+        {{- if eq .Values.server.type "paper" }}
+        - name: PAPER_BUILD
+          value: {{ .Values.server.paperBuild | quote }}
+        - name: PAPER_CHANNEL
+          value: {{ .Values.server.paperChannel | quote }}
+        - name: PAPER_DOWNLOAD_URL
+          value: {{ .Values.server.paperDownloadUrl | quote }}
+        {{- end }}
+        {{- if eq .Values.server.type "quilt" }}
+        - name: QUILT_LOADER_VERSION
+          value: {{ .Values.server.quiltLoaderVersion | quote }}
+        - name: QUILT_INSTALLER_VERSION
+          value: {{ .Values.server.quiltInstallerVersion | quote }}
+        {{- end }}
+        {{- $_ := required
+          "Please accept the eula to continue."
+          ( ternary true "" ( eq .Values.server.properties.eula "true" ) )
+        }}
+        - name: EULA
+          value: {{ .Values.server.properties.eula | quote }}
+        - name: LEVEL_NAME
+          value: {{ .Values.server.properties.levelName | quote }}
+        - name: MOTD
+          value: {{ .Values.server.properties.motd | quote }}
+        - name: MODE
+          value: {{ .Values.server.properties.gamemode | quote }}
+        - name: DIFFICULTY
+          value: {{ .Values.server.properties.difficulty | quote }}
+        - name: HARDCORE
+          value: {{ .Values.server.properties.hardcore | quote }}
+        - name: PVP
+          value: {{ .Values.server.properties.pvp | quote }}
+        {{- if .Values.server.properties.seed }}
+        - name: SEED
+          value: {{ .Values.server.properties.levelSeed | quote }}
+        {{- end }}
+        - name: LEVEL_TYPE
+          value: {{ .Values.server.properties.levelType | quote }}
+        - name: GENERATE_STRUCTURES
+          value: {{ .Values.server.properties.generateStructures | quote }}
+        - name: ENABLE_COMMAND_BLOCK
+          value: {{ .Values.server.properties.enableCommandBlock | quote }}
+        - name: ALLOW_FLIGHT
+          value: {{ .Values.server.properties.allowFlight | quote }}
+        - name: ALLOW_NETHER
+          value: {{ .Values.server.properties.allowNether | quote }}
+        - name: SPAWN_MONSTERS
+          value: {{ .Values.server.properties.spawnMonsters | quote }}
+        - name: SPAWN_ANIMALS
+          value: {{ .Values.server.properties.spawnAnimals | quote }}
+        - name: SPAWN_PROTECTION
+          value: {{ .Values.server.properties.spawnProtection | quote }}
+        - name: MAX_PLAYERS
+          value: {{ .Values.server.properties.maxPlayers | quote }}
+        - name: MAX_WORLD_SIZE
+          value: {{ .Values.server.properties.maxWorldSize | quote }}
+        - name: VIEW_DISTANCE
+          value: {{ .Values.server.properties.viewDistance | quote }}
+        - name: SIMULATION_DISTANCE
+          value: {{ .Values.server.properties.simulationDistance | quote }}
+        - name: ENABLE_STATUS
+          value: {{ .Values.server.properties.enableStatus | quote }}
+        - name: ONLINE_MODE
+          value: {{ .Values.server.properties.onlineMode | quote }}
+        - name: NETWORK_COMPRESSION_THRESHOLD
+          value: {{ .Values.server.properties.networkCompressionThreshold | quote }}
+        - name: ENABLE_JMX
+          value: {{ .Values.server.properties.enableJmxMonitoring | quote }}
+        - name: SYNC_CHUNK_WRITES
+          value: {{ .Values.server.properties.syncChunkWrites | quote }}
+        - name: ENTITY_BROADCAST_RANGE_PERCENTAGE
+          value: {{ .Values.server.properties.entityBroadcastRangePercentage | quote }}
+        - name: PLAYER_IDLE_TIMEOUT
+          value: {{ .Values.server.properties.playerIdleTimeout | quote }}
+        - name: OP_PERMISSION_LEVEL
+          value: {{ .Values.server.properties.opPermissionLevel | quote }}
+        - name: FUNCTION_PERMISSION_LEVEL
+          value: {{ .Values.server.properties.functionPermissionLevel | quote }}
+        - name: BROADCAST_RCON_TO_OPS
+          value: {{ .Values.server.properties.broadcastRconToOps | quote }}
+        - name: FORCE_GAMEMODE
+          value: {{ .Values.server.properties.forceGamemode | quote }}
+        - name: RESOURCE_PACK
+          value: {{ .Values.server.properties.resourcePack | quote }}
+        - name: RESOURCE_PACK_SHA1
+          value: {{ .Values.server.properties.resourcePackSha1 | quote }}
+        - name: RESOURCE_PACK_ENFORCE
+          value: {{ .Values.server.properties.resourcePackEnforce | quote }}
+        - name: ENABLE_WHITELIST
+          value: {{ .Values.server.properties.enableWhitelist | quote }}
+        - name: WHITELIST
+          value: {{ join "," .Values.server.properties.whitelist | quote }}
+        {{- if .Values.server.modrinthProjects }}
+        - name: MODRINTH_PROJECTS
+          value: {{ join "," .Values.server.modrinthProjects | quote }}
+        - name: MODRINTH_DOWNLOAD_DEPENDENCIES
+          value: {{ .Values.server.modrinthDownloadDependencies | quote }}
+        - name: MODRINTH_ALLOWED_VERSION_TYPE
+          value: {{ .Values.server.modrinthAllowedVersionType | quote }}
+        {{ end }}
+        {{- if .Values.server.curseforgeFiles }}
+        {{- $_ := required
+          "You must provide a CurseForge API key or an existing secret name."
+          ( default .Values.server.curseforgeApiKey .Values.server.curseforgeExistingSecret )
+        }}
+        - name: CURSEFORGE_FILES
+          value: {{ join "," .Values.server.curseforgeFiles | quote }}
+        - name: CF_API_KEY_FILE
+          value: {{ include "minecraft-server.pathCurseforgeSecret" . | quote }}
+        {{ end }}
+        {{- if .Values.server.spigetResources }}
+        - name: SPIGET_RESOURCES
+          value: {{ join "," .Values.server.spigetResources | quote }}
+        {{- end }}
+        {{- if .Values.server.packwizUrl }}
+        - name: PACKWIZ_URL
+          value: {{ .Values.server.packwizUrl | quote }}
+        {{- end }}
+        - name: ENABLE_RCON
+          value: {{ .Values.rcon.enabled | quote }}
+        {{- if .Values.rcon.enabled }}
+        - name: RCON_PORT
+          value: {{ .Values.rcon.service.port | quote }}
+        - name: RCON_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lib.secrets.name" ( dict "existingSecret" .Values.rcon.existingSecret "suffix" "rcon" "ctx" . ) }}
+              key: {{ include "lib.secrets.key" ( dict "key" "password" "existingSecret" .Values.rcon.existingSecret ) }}
+        {{- end }}
+        - name: ENABLE_QUERY
+          value: {{ .Values.query.enabled | quote }}
+        {{- if .Values.query.enable }}
+        - name: QUERY_PORT
+          value: {{ .Values.query.service.port | quote }}
+        {{- end }}
+        {{- range $k, $v := .Values.extraEnv }}
+        - name: {{ $k }}
+          value: {{ include "lib.utils.renderTpl" ( dict "tpl" $v "ctx" $ ) | quote }}
+        {{- end }}
+        ports:
+        - name: server
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        {{- if .Values.rcon.enabled }}
+        - name: rcon
+          containerPort: {{ .Values.rcon.service.port }}
+          protocol: TCP
+        {{- end }}
+        {{- if .Values.query.enabled }}
+        - name: query
+          containerPort: {{ .Values.query.service.port }}
+          protocol: UDP
+        {{- end }}
+        {{- range $k, $v := .Values.extraPorts }}
+        - name: {{ $k }}
+          containerPort: {{ $v.containerPort }}
+          protocol: {{ default "TCP" $v.protocol }}
+        {{- end }}
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: server-volume
+          mountPath: /server
+        {{- if .Values.server.curseforgeFiles }}
+        - name: curseforge-secret
+          mountPath: /secrets/curseforge
+        {{- end}}
+        {{- if .Values.extraConfig }}
+          {{- range $k, $v := .Values.extraConfig }}
+        - name: config-volume
+          mountPath: {{ $v.path }}
+          subPath: {{ include "lib.strings.normalize" ( dict "str" $k ) }}
+          {{- end }}
+        {{- end }}
+      {{- if .Values.backup.enabled }}
+      {{- $_ := required
+        "You must enable RCON to use backup."
+        ( ternary true "" ( .Values.rcon.enabled ) )
+      }}
+      - name: backup
+        image: {{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}
+        imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+        {{- with .Values.securityContext }}
+        securityContext: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.backup.resources }}
+        resources: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        env:
+        - name: BACKUP_NAME
+          value: {{ include "lib.utils.renderTpl" ( dict "tpl" .Values.backup.config.backupName "ctx" . ) | quote }}
+        - name: BACKUP_INTERVAL
+          value: {{ .Values.backup.config.backupInterval | quote }}
+        - name: BACKUP_ON_STARTUP
+          value: {{ .Values.backup.config.backupOnStartup | quote }}
+        - name: INITIAL_DELAY
+          value: {{ .Values.backup.config.initialDelay | quote }}
+        - name: PAUSE_IF_NO_PLAYERS
+          value: {{ .Values.backup.config.pauseIfNoPlayers | quote }}
+        - name: PLAYERS_ONLINE_CHECK_INTERVAL
+          value: {{ .Values.backup.config.playersOnlineCheckInterval | quote }}
+        - name: PRUNE_BACKUPS_DAYS
+          value: {{ .Values.backup.config.pruneBackupsDays | quote }}
+        - name: PRUNE_BACKUPS_COUNT
+          value: {{ .Values.backup.config.pruneBackupsCount | quote }}
+        - name: RCON_HOST
+          value: "localhost"
+        - name: RCON_PORT
+          value: {{ .Values.rcon.service.port | quote }}
+        - name: RCON_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lib.secrets.name" ( dict "existingSecret" .Values.rcon.existingSecret "suffix" "rcon" "ctx" . ) }}
+              key: {{ include "lib.secrets.key" ( dict "key" "password" "existingSecret" .Values.rcon.existingSecret ) }}
+        - name: RCON_RETRIES
+          value: {{ .Values.backup.config.rconRetries | quote }}
+        - name: RCON_RETRY_INTERVAL
+          value: {{ .Values.backup.config.rconRetryInterval | quote }}
+        - name: ENABLE_SAVE_ALL
+          value: {{ .Values.backup.config.enableSaveAll | quote }}
+        - name: ENABLE_SYNC
+          value: {{ .Values.backup.config.enableSync | quote }}
+        - name: INCLUDES
+          value: {{ join "," .Values.backup.config.includes | quote }}
+        - name: EXCLUDES
+          value: {{ join "," .Values.backup.config.excludes | quote }}
+        - name: ZSTD_PARAMETERS
+          value: {{ join "," .Values.backup.config.zstdParameters | quote }}
+        - name: LINK_LATEST
+          value: {{ .Values.backup.config.linkLatest | quote }}
+        - name: BACKUP_METHOD
+          value: {{ .Values.backup.config.backupMethod | quote }}
+        {{- if eq .Values.backup.config.backupMethod "tar" }}
+        - name: TAR_COMPRESS_METHOD
+          value: {{ .Values.backup.config.tarCompressMethod | quote }}
+        {{- end }}
+        {{- if eq .Values.backup.config.backupMethod "rclone" }}
+        {{- $_ := required
+          "You must provide an Rclone config or an existing secret name."
+          ( default .Values.backup.config.rcloneConfig .Values.backup.config.rcloneExistingSecret )
+        }}
+        - name: RCLONE_REMOTE
+          value: {{ .Values.backup.config.rcloneRemote | quote }}
+        - name: RCLONE_COMPRESS_METHOD
+          value: {{ .Values.backup.config.rcloneCompressMethod | quote }}
+        - name: RCLONE_DEST_DIR
+          value: {{ .Values.backup.config.rcloneDestDir | quote }}
+        {{- end }}
+        {{- if eq .Values.backup.config.backupMethod "restic" }}
+        {{- $_ := required
+          "You must provide an Restic password or an existing secret name."
+          ( default .Values.backup.config.resticPassword .Values.backup.config.resticExistingSecret )
+        }}
+        - name: RESTIC_REPOSITORY
+          value: {{ required "You must provide a Restic repository." .Values.backup.config.resticRepository | quote }}
+        - name: RESTIC_ADDITIONAL_TAGS
+          value: {{ join "," .Values.backup.config.resticAdditionalTags | quote }}
+        - name: RESTIC_PRUNE_ATTENTION
+          value: {{ .Values.backup.config.resticPruneAttention | quote }}
+        - name: RESTIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lib.secrets.name" ( dict "existingSecret" .Values.backup.config.resticExistingSecret "suffix" "restic" "ctx" . ) }}
+              key: {{ include "lib.secrets.key" ( dict "key" "password" "existingSecret" .Values.backup.config.resticExistingSecret ) }}
+        {{- end }}
+        {{- range $k, $v := .Values.backup.extraEnv }}
+        - name: {{ $k }}
+          value: {{ include "lib.utils.renderTpl" ( dict "tpl" $v "ctx" $ ) | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: server-volume
+          mountPath: /data
+          readOnly: true
+        - name: backup-volume
+          mountPath: /backups
+        {{- if eq .Values.backup.config.backupMethod "rclone" }}
+        - name: rclone-secret
+          mountPath: /secrets/rclone
+        {{- end }}
+      {{- end }}
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: server-volume
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "lib.names.fullname" . }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.server.curseforgeFiles }}
+      - name: curseforge-secret
+        secret:
+          secretName: {{ include "lib.secrets.name" ( dict "existingSecret" .Values.server.curseforgeExistingSecret "suffix" "curseforge" "ctx" . ) }}
+      {{- end }}
+      {{- if .Values.backup.enabled }}
+      - name: backup-volume
+        {{- if .Values.backup.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "lib.names.fullname" . }}-backup
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+        {{- if eq .Values.backup.config.backupMethod "rclone" }}
+      - name: rclone-secret
+        secret:
+          secretName: {{ include "lib.secrets.name" ( dict "existingSecret" .Values.backup.config.rcloneExistingSecret "suffix" "rclone" "ctx" . ) }}
+          items:
+          - key: {{ include "lib.secrets.key" ( dict "key" "rclone-conf" "existingSecret" .Values.backup.config.rcloneExistingSecret ) }}
+            path: rclone.conf
+        {{- end }}
+      {{- end }}
+      {{- if .Values.extraConfig }}
+      - name: config-volume
+        configMap:
+          name: {{ include "lib.names.fullname" . }}-extra
+      {{- end }}

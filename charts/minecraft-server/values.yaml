@@ -1,0 +1,351 @@
+nameOverride: ""
+fullnameOverride: ""
+
+# ref: https://hub.docker.com/r/itzg/minecraft-server/
+image:
+  repository: "itzg/minecraft-server"
+  tag: "latest"
+  pullPolicy: "IfNotPresent"
+
+# You can switch to a 'StatefulSet' kind
+# ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/
+kind: Deployment
+# NOTE: vanilla Minecraft server is not horizontally scalable so use it with caution
+replicas: 1
+
+revisionHistoryLimit: 5
+
+restartPolicy: Always
+strategy:
+  type: Recreate
+
+nodeSelector: {}
+tolerations: {}
+affinity: {}
+
+# Depending on a Minecraft server deployment it can be long in time
+# to start up and configure all dependencies and itself
+startupProbe:
+  exec:
+    command:
+      - mc-monitor
+      - status
+  failureThreshold: 10
+  periodSeconds: 10
+livenessProbe:
+  exec:
+    command:
+      - mc-monitor
+      - status
+  failureThreshold: 10
+readinessProbe:
+  exec:
+    command:
+      - mc-monitor
+      - status
+  failureThreshold: 10
+
+service:
+  labels: {}
+  annotations: {}
+  type: ClusterIP
+  port: 25565
+  nodePort:
+  clusterIP:
+  loadbalancerIP:
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
+  readOnlyRootFilesystem: true
+
+resources:
+  requests:
+    cpu: "1000m"
+    memory: "512Mi"
+persistence:
+  enabled: false
+  storageClass: ""
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+# Use extra configuration for ports, environment variables, and configuration files
+# if you need to customize the server's behavior
+extraPorts:
+  # voicechat:
+  #   labels: {}
+  #   annotations: {}
+  #   containerPort: 25575
+  #   port: 25575
+  #   protocol: UDP
+  #   nodePort:
+  #   clusterIP:
+  #   type: ClusterIP
+
+# NOTE: this section supports Go templates
+extraEnv:
+  # REPLACE_ENV_DURING_SYNC: "false"
+  # COPY_CONFIG_DEST: "/data"
+
+# NOTE: this section supports Go templates
+extraConfig:
+  # nanolimbo-settings:
+  #   path: /config/settings.yml
+  #   content: |
+  #     bind:
+  #       ip: localhost
+  #       port: 25565
+  #     maxPlayers: 10
+  #     ping:
+  #       description: '{"text": "&9NanoLimbo"}'
+  #       version: 'NanoLimbo'
+  #       protocol: -1
+  #     dimension: THE_END
+
+# Configuration for the Minecraft server
+# ref: https://minecraft.wiki/w/Server
+server:
+  # Common types are vanilla, fabric, forge, neoforge, spongevanilla, limbo, nanolimbo, paper, quilt
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/types-and-platforms/
+  type: "vanilla"
+  minecraftVersion: "latest"
+  # If type is "fabric"
+  fabricLauncherVersion: ""
+  fabricLoaderVersion: ""
+  fabricLauncherUrl: ""
+  # If type is "forge"
+  forgeVersion: ""
+  forgeInstallerUrl: ""
+  # If type is "neoforge"
+  neoforgeVersion: ""
+  # If type is "sponge"
+  spongeVersion: ""
+  spongeBranch: ""
+  # If type is "limbo" or "nanolimbo"
+  limboBuild: ""
+  # If type is "paper"
+  paperBuild: ""
+  paperChannel: ""
+  paperDownloadUrl: ""
+  # If type is "quilt"
+  quiltLoaderVersion: ""
+  quiltInstallerVersion: ""
+
+  # Minecraft server properties
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/variables/#server
+  properties:
+    # NOTE: it must to accept the EULA to start the server
+    eula: "true"
+    levelName: "world"
+    motd: "Welcome to Minecraft Server in Kubernetes!"
+
+    gamemode: "survival"
+    difficulty: "easy"
+    hardcore: "false"
+    pvp: "true"
+
+    levelSeed: ""
+    levelType: "minecraft:normal"
+
+    generateStructures: "true"
+    enableCommandBlock: "false"
+    allowFlight: "false"
+    allowNether: "true"
+    spawnMonsters: "true"
+    spawnNpcs: "true"
+    spawnAnimals: "true"
+    spawnProtection: 16
+
+    maxPlayers: 20
+    maxWorldSize: ""
+    viewDistance: 10
+    simulationDistance: 10
+
+    enableStatus: "true"
+    onlineMode: "true"
+    useNativeTransport: "true"
+    preventProxyConnections: "false"
+
+    networkCompressionThreshold: 256
+    enableJmxMonitoring: "false"
+    syncChunkWrites: "true"
+    entityBroadcastRangePercentage: 100
+    playerIdleTimeout: 0
+
+    opPermissionLevel: 4
+    functionPermissionLevel: 2
+    broadcastRconToOps: "false"
+    forceGamemode: "false"
+
+    resourcePack: ""
+    resourcePackSha1: ""
+    resourcePackEnforce: "false"
+
+    enableWhitelist: "false"
+    whitelist: []
+
+  # Install plugins using modrinth, spiget or custom urls to jar files
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/mods-and-plugins/
+  modrinthProjects: []
+  modrinthDownloadDependencies: "none"
+  modrinthAllowedVersionType: "release"
+  curseforgeFiles: []
+  # IMPORTANT: do not use explicit secret definition here for production environments
+  # If you are going to store values in a repository use an existing secret instead
+  curseforgeApiKey: ""
+  curseforgeExistingSecret:
+    # name: "my-curseforge-secret"
+    # keyMapping:
+    #   api-key: "curseforge-secret-key"
+  spigetResources: []
+  packwizUrl: ""
+
+
+# RCON configuration
+# ref: https://minecraft.wiki/w/RCON
+rcon:
+  enabled: false
+
+  service:
+    labels: {}
+    annotations: {}
+    type: ClusterIP
+    port: 25575
+    nodePort:
+    clusterIP:
+    loadbalancerIP:
+
+  # RCON password will be generated if not provided
+  existingSecret:
+    # name: "my-rcon-secret"
+    # keyMapping:
+    #   password: "my-password-key"
+
+# Query protocol configuration
+# ref: https://minecraft.wiki/w/Query
+query:
+  enabled: false
+
+  service:
+    labels: {}
+    annotations: {}
+    type: ClusterIP
+    port: 25565
+    nodePort:
+    clusterIP:
+    loadbalancerIP:
+
+# Backup configuration
+# IMPORTANT: you must set rcon.enabled to true if you want to use backup
+backup:
+  enabled: false
+
+  image:
+    repository: "itzg/mc-backup"
+    tag: "latest"
+    pullPolicy: "IfNotPresent"
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256Mi"
+
+  persistence:
+    enabled: false
+    storageClass: ""
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+
+  # NOTE: this section supports Go templates
+  extraEnv:
+    # RESTIC_VERBOSE: "true"
+
+  # Configuration of backup
+  # ref: https://github.com/itzg/docker-mc-backup
+  config:
+    # NOTE: the name supports Go templates
+    backupName: "{{ .Values.server.properties.levelName }}"
+    backupInterval: "2h"
+    backupOnStartup: "true"
+    initialDelay: "2m"
+
+    pauseIfNoPlayers: "true"
+    playersOnlineCheckInterval: "5m"
+
+    pruneBackupsDays: "7"
+    pruneBackupsCount: "5"
+
+    rconRetries: "5"
+    rconRetryInterval: "5s"
+
+    enableSaveAll: "true"
+    enableSync: "true"
+
+    includes:
+      - "."
+    excludes:
+      - "*.jar"
+      - "cache"
+      - "logs"
+      - "*.tmp"
+
+    zstdParameters:
+      - "-3"
+      - "--long=25"
+      - "--single-thread"
+
+    linkLatest: "true"
+
+    # Common types: tar, rsync, rclone, restic
+    backupMethod: "tar"
+    # If method is tar
+    tarCompressMethod: "gzip"
+    # If method is rclone
+    rcloneRemote: "[remote]"
+    rcloneCompressMethod: "gzip"
+    rcloneDestDir: ""
+    # IMPORTANT: do not use explicit secret definition here for production environments
+    # If you are going to store values in a repository use an existing secret instead
+    rcloneConfig: ""
+    # rcloneConfig: |-
+    #   [remote]
+    #   type = google cloud storage
+    #   client_id =
+    #   client_secret =
+    #   token = {"AccessToken":"super","RefreshToken":"secret","Expiry":"date","Extra":null}
+    #   project_number = 12345678
+    #   object_acl = private
+    #   bucket_acl = private
+    rcloneExistingSecret:
+      # name: "my-rclone-secret"
+      # keyMapping:
+      #   rclone-conf: "my-rclone-secret-key"
+    # If method is restic
+    resticRepository: ""
+    resticAdditionalTags:
+      - "backup"
+      - "minecraft"
+    resticPruneAttention: "--keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-yearly 75"
+    # IMPORTANT: do not use explicit secret definition here for production environments
+    # If you are going to store values in a repository use an existing secret instead
+    resticPassword: ""
+    resticExistingSecret:
+      # name: "my-restic-secret"
+      # keyMapping:
+      #   password: "my-restic-secret-key"
