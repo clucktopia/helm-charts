@@ -1,0 +1,19 @@
+apiVersion: v1
+entries:
+  minecraft-lib:
+  - apiVersion: v2
+    created: "2025-08-07T23:16:54.47238474Z"
+    description: A library Helm Chart for Minecraft Charts
+    digest: ff80cd26586fa0b07abdbb2ccd243bf286c6d0d634fd8427acb3a6e880700993
+    home: https://github.com/clucktopia
+    maintainers:
+    - email: iveahugeship@gmail.com
+      name: iveahugeship
+    name: minecraft-lib
+    sources:
+    - https://github.com/clucktopia
+    type: library
+    urls:
+    - https://github.com/clucktopia/helm-charts/releases/download/minecraft-lib-1.0.0/minecraft-lib-1.0.0.tgz
+    version: 1.0.0
+generated: "2025-08-07T23:16:54.472397534Z"
