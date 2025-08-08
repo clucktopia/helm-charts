@@ -1,0 +1,35 @@
+name: Sync docs
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  sync-pages:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: main
+        path: main
+
+    - name: Checkout gh-pages branch
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Sync, commit, and push
+      run: |
+        cp -f main/*.md gh-pages/ && cd gh-pages
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+        git add *.md
+        git commit -m "Sync docs from main"
+        git push
