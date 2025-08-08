@@ -72,7 +72,7 @@ securityContext:
 resources:
   requests:
     cpu: "1000m"
-    memory: "512Mi"
+    memory: "2Gi"
 persistence:
   enabled: false
   storageClass: ""

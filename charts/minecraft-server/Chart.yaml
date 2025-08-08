@@ -2,7 +2,7 @@ apiVersion: v2
 name: minecraft-server
 description: Minecraft Server
 type: application
-version: 1.0.0-alpha1
+version: 1.0.0-alpha2
 home: "https://github.com/clucktopia"
 sources:
   - "https://github.com/clucktopia/helm-charts"
