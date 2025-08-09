@@ -26,6 +26,10 @@ A Helm chart library for developing Minecraft Java Edition charts.
 
 A flexible Helm chart to run a Minecraft Java Edition server on Kubernetes.
 
+## `📦 minecraft-proxy`
+
+A flexible Helm chart to run a Minecraft Proxy server on Kubernetes.
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE.md) for details.
