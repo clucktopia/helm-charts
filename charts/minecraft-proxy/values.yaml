@@ -1,0 +1,154 @@
+nameOverride: ""
+fullnameOverride: ""
+
+# ref: https://github.com/itzg/docker-mc-proxy
+image:
+  repository: "itzg/mc-proxy"
+  tag: "latest"
+  pullPolicy: "IfNotPresent"
+
+# You can switch to a 'StatefulSet' kind
+# ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/
+kind: Deployment
+# NOTE: vanilla Minecraft server is not horizontally scalable so use it with caution
+replicas: 1
+
+revisionHistoryLimit: 5
+
+restartPolicy: Always
+strategy:
+  type: Recreate
+
+nodeSelector: {}
+tolerations: {}
+affinity: {}
+
+# Depending on a Minecraft server deployment it can be long in time
+# to start up and configure all dependencies and itself
+startupProbe:
+  exec:
+    command:
+      - mc-monitor
+      - status
+  failureThreshold: 10
+  periodSeconds: 10
+livenessProbe:
+  exec:
+    command:
+      - mc-monitor
+      - status
+  failureThreshold: 10
+readinessProbe:
+  exec:
+    command:
+      - mc-monitor
+      - status
+  failureThreshold: 10
+
+service:
+  labels: {}
+  annotations: {}
+  type: ClusterIP
+  port: 25565
+  nodePort:
+  clusterIP:
+  loadbalancerIP:
+
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  privileged: false
+  readOnlyRootFilesystem: true
+
+resources:
+  requests:
+    cpu: "1000m"
+    memory: "512Mi"
+persistence:
+  enabled: false
+  storageClass: ""
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+# Use extra configuration for ports, environment variables, and configuration files
+# if you need to customize the server's behavior
+extraPorts:
+  # voicechat:
+  #   labels: {}
+  #   annotations: {}
+  #   containerPort: 25575
+  #   port: 25575
+  #   protocol: UDP
+  #   nodePort:
+  #   clusterIP:
+  #   type: ClusterIP
+
+# NOTE: this section supports Go templates
+extraEnv:
+  # REPLACE_ENV_DURING_SYNC: "true"
+
+# NOTE: this section supports Go templates
+extraConfig:
+  # voicechat-properties:
+  #   path: /config/plugins/voicechat/voicechat-proxy.properties
+  #   content: |
+  #     port=25575
+  #     bind_address=*
+
+# Configuration for the Minecraft proxy server
+# ref: https://github.com/itzg/docker-mc-proxy?tab=readme-ov-file#environment-settings
+proxy:
+  # Common types are "bungeecord", "waterfall", "velocity", "custom"
+  # ref: https://github.com/itzg/docker-mc-proxy?tab=readme-ov-file#optional-environment-settings
+  type: "velocity"
+  minecraftVersion: "latest"
+  networkAddressCacheTTL: 60
+  # If type is "bungeecord" or "waterfall"
+  jenkinsBaseUrl: ""
+  jenkinsJobId: "lastStableBuild"
+  # If type is "waterfall"
+  waterfallVersion: ""
+  waterfallBuildId: ""
+  # If type is "velocity"
+  velocityVersion: ""
+  velocityBuildId: ""
+  # Velocity forwarding key will be generated if not provided
+  velocityExistingSecret:
+    # name: "my-velocity-secret"
+    # keyMapping:
+    #   forwarding-key: "velocity-secret-key"
+  # If type is "custom"
+  jarUrl: ""
+
+  # Install plugins using modrinth, spiget or custom urls to jar files
+  # ref: https://docker-minecraft-server.readthedocs.io/en/latest/mods-and-plugins/
+  modrinthProjects: []
+  modrinthDownloadDependencies: "none"
+  modrinthAllowedVersionType: "release"
+  spigetResources: []
+  plugins: []
+
+  # Configuration file for the proxy server
+  # NOTE: the name supports Go templates
+  config: |
+    config-version = "2.7"
+    bind = "0.0.0.0:25565"
+    motd = "<#09add3>A Velocity Server"
+    show-max-players = 500
+    online-mode = true
+    prevent-client-proxy-connections = false
+    player-info-forwarding-mode = "none"
+    forwarding-secret-file = "/secrets/velocity/{{ include "lib.secrets.key" ( dict "key" "forwarding-key" "existingSecret" .Values.proxy.velocityExistingSecret ) }}"
+  configPath: /server/velocity.toml

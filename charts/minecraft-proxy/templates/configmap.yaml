@@ -1,0 +1,9 @@
+{{- if .Values.proxy.config -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels: {{- include "lib.labels.common" . | nindent 4 }}
+  name: {{ include "lib.names.fullname" . }}
+data:
+  config: {{ include "lib.utils.toYaml" ( dict "obj" .Values.proxy.config "tpl" true "ctx" . ) | indent 2 }}
+{{- end -}}

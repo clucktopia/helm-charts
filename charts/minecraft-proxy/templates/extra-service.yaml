@@ -1,0 +1,31 @@
+{{- range $k, $v := .Values.extraPorts }}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- if $v.annotations }}
+  annotations: {{- include "lib.utils.toYaml" ( dict "obj" $v.annotations "ctx" $ ) | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "lib.labels.common" $ | nindent 4 }}
+    {{- if $v.labels }}
+      {{- include "lib.utils.toYaml" ( dict "obj" $v.labels "ctx" $ ) | nindent 4 }}
+    {{- end }}
+  name: {{ printf "%s-%s" ( include "lib.names.fullname" $ ) $k }}
+spec:
+  selector: {{- include "lib.labels.common" $ | nindent 4 }}
+  type: {{ default "ClusterIP" $v.type }}
+  {{- if $v.clusterIP }}
+  clusterIP: {{ $v.clusterIP }}
+  {{- end }}
+  {{- if $v.loadbalancerIP }}
+  loadBalancerIP: {{ $v.loadbalancerIP }}
+  {{- end }}
+  ports:
+  - name: {{ $k }}
+    port: {{ $v.port }}
+    {{- if $v.nodePort }}
+    nodePort: {{ $v.nodePort }}
+    {{- end }}
+    protocol: {{ default "TCP" $v.protocol }}
+    targetPort: {{ $k }}
+{{- end }}

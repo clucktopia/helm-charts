@@ -1,0 +1,184 @@
+apiVersion: apps/v1
+kind: {{ .Values.kind }}
+metadata:
+  labels: {{- include "lib.labels.common" . | nindent 4 }}
+  name: {{ include "lib.names.fullname" . }}
+spec:
+  selector:
+    matchLabels: {{- include "lib.labels.common" . | nindent 6 }}
+  replicas: {{ ternary .Values.replicas 1 ( eq .Values.kind "StatefulSet" ) }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- if .Values.strategy }}
+    {{- if eq .Values.kind "StatefulSet" }}
+  updateStrategy: {{- include "lib.utils.toYaml" ( dict "obj" .Values.strategy ) | nindent 4 }}
+    {{- else }}
+  strategy: {{- include "lib.utils.toYaml" ( dict "obj" .Values.strategy ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  template:
+    metadata:
+      labels: {{- include "lib.labels.common" . | nindent 8 }}
+    spec:
+      {{- with .Values.restartPolicy }}
+      restartPolicy: {{ include "lib.utils.toYaml" ( dict "obj" . ) }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: mc-proxy
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.securityContext }}
+        securityContext: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.resources }}
+        resources: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.startupProbe }}
+        startupProbe: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.livenessProbe }}
+        livenessProbe: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
+        readinessProbe: {{- include "lib.utils.toYaml" ( dict "obj" . ) | nindent 10 }}
+        {{- end }}
+        env:
+        - name: INIT_MEMORY
+          valueFrom:
+            resourceFieldRef:
+              containerName: mc-proxy
+              resource: requests.memory
+        - name: MAX_MEMORY
+          valueFrom:
+            resourceFieldRef:
+              containerName: mc-proxy
+              resource: limits.memory
+        - name: TYPE
+          value: {{ .Values.proxy.type | quote }}
+        - name: MINECRAFT_VERSION
+          value: {{ .Values.proxy.minecraftVersion | quote }}
+        - name: NETWORK_ADDRESS_CACHE_TTL
+          value: {{ .Values.proxy.networkAddressCacheTTL | quote }}
+        {{- if or ( eq .Values.proxy.type "bungeecord" ) ( eq .Values.proxy.type "waterfall" ) }}
+          {{- if .Values.proxy.jenkinsBaseUrl }}
+        - name: BUNGEE_BASE_URL
+          value: {{ .Values.proxy.jenkinsBaseUrl | quote }}
+          {{- end }}
+          {{- if .Values.proxy.jenkinsJobId }}
+        - name: BUNGEE_JOB_ID
+          value: {{ .Values.proxy.jenkinsJobId | quote }}
+          {{- end }}
+        {{- end -}}
+        {{- if eq .Values.proxy.type "waterfall" }}
+          {{- if .Values.proxy.waterfallVersion }}
+        - name: WATERFALL_VERSION
+          value: {{ .Values.proxy.waterfallVersion | quote }}
+          {{- end }}
+          {{- if .Values.proxy.waterfallBuildId }}
+        - name: WATERFALL_BUILD_ID
+          value: {{ .Values.proxy.waterfallBuildId | quote }}
+          {{- end }}
+        {{- end }}
+        {{- if eq .Values.proxy.type "velocity" }}
+          {{- if .Values.proxy.velocityVersion }}
+        - name: VELOCITY_VERSION
+          value: {{ .Values.proxy.velocityVersion | quote }}
+          {{- end }}
+          {{- if .Values.proxy.velocityBuildId }}
+        - name: VELOCITY_BUILD_ID
+          value: {{ .Values.proxy.velocityBuildId | quote }}
+          {{- end }}
+        {{- end }}
+        {{- if eq .Values.proxy.type "custom" }}
+        - name: BUNGEE_JAR_URL
+          value: {{ .Values.proxy.jarUrl | quote }}
+        {{- end }}
+        {{- if .Values.proxy.modrinthProjects }}
+        - name: MODRINTH_PROJECTS
+          value: {{ join "," .Values.proxy.modrinthProjects | quote }}
+        {{- end }}
+        {{- if .Values.proxy.modrinthDownloadDependencies }}
+        - name: MODRINTH_DOWNLOAD_DEPENDENCIES
+          value: {{ .Values.proxy.modrinthDownloadDependencies | quote }}
+        {{- end }}
+        {{- if .Values.proxy.modrinthAllowedVersionType }}
+        - name: MODRINTH_ALLOWED_VERSION_TYPE
+          value: {{ .Values.proxy.modrinthAllowedVersionType | quote }}
+        {{- end }}
+        {{- if .Values.proxy.spigetResources }}
+        - name: SPIGET_PLUGINS
+          value: {{ join "," .Values.proxy.spigetResources | quote }}
+        {{- end }}
+        {{- if .Values.proxy.plugins }}
+        - name: PLUGINS
+          value: {{ join "," .Values.proxy.plugins | quote }}
+        {{- end }}
+        {{- range $k, $v := .Values.extraEnv }}
+        - name: {{ $k }}
+          value: {{ include "lib.utils.renderTpl" ( dict "tpl" $v "ctx" $ ) | quote }}
+        {{- end }}
+        ports:
+        - name: proxy
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        {{- range $k, $v := .Values.extraPorts }}
+        - name: {{ $k }}
+          containerPort: {{ $v.containerPort }}
+          protocol: {{ default "TCP" $v.protocol }}
+        {{- end }}
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: server-volume
+          mountPath: /server
+        - name: config-volume
+          mountPath: {{ .Values.proxy.configPath }}
+          subPath: config
+        {{- if eq .Values.proxy.type "velocity" }}
+        - name: velocity-secret
+          mountPath: /secrets/velocity
+        {{- end }}
+        {{- if .Values.extraConfig }}
+          {{- range $k, $v := .Values.extraConfig }}
+        - name: config-extra-volume
+          mountPath: {{ $v.path }}
+          subPath: {{ include "lib.strings.normalize" ( dict "str" $k ) }}
+          {{- end }}
+        {{- end }}
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: server-volume
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "lib.names.fullname" . }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      - name: config-volume
+        configMap:
+          name: {{ include "lib.names.fullname" . }}
+          items:
+          - key: config
+            path: config
+      {{- if eq .Values.proxy.type "velocity" }}
+      - name: velocity-secret
+        secret:
+          secretName: {{ include "lib.secrets.name" ( dict "existingSecret" .Values.proxy.velocityExistingSecret "suffix" "velocity" "ctx" . ) }}
+      {{- end }}
+      {{- if .Values.extraConfig }}
+      - name: config-extra-volume
+        configMap:
+          name: {{ include "lib.names.fullname" . }}-extra
+      {{- end }}

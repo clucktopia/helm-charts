@@ -1,0 +1,9 @@
+{{- define "minecraft-proxy.createVelocitySecret" -}}
+{{- $secretName := include "lib.secrets.name" ( dict "suffix" "velocity" "ctx" . ) -}}
+
+{{- and
+  ( eq .Values.proxy.type "velocity" )
+  ( empty .Values.proxy.velocityExistingSecret )
+  ( empty ( lookup "v1" "Secret" .Release.Namespace $secretName ) )
+-}}
+{{- end -}}
