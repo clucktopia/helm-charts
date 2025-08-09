@@ -16,6 +16,26 @@ entries:
     urls:
     - https://github.com/clucktopia/helm-charts/releases/download/minecraft-lib-1.0.0/minecraft-lib-1.0.0.tgz
     version: 1.0.0
+  minecraft-proxy:
+  - apiVersion: v2
+    created: "2025-08-09T14:25:01.304599653Z"
+    dependencies:
+    - name: minecraft-lib
+      repository: https://clucktopia.github.io/helm-charts
+      version: ~1.0.0
+    description: A flexible Helm chart to run a Minecraft Proxy server
+    digest: 333d5d4e1c5634588faba5752fa13b4fe4057c8644f6da3a83a2cf07479face8
+    home: https://github.com/clucktopia
+    maintainers:
+    - email: iveahugeship@gmail.com
+      name: iveahugeship
+    name: minecraft-proxy
+    sources:
+    - https://github.com/itzg/docker-mc-proxy
+    type: application
+    urls:
+    - minecraft-proxy-1.0.0-alpha1.tgz
+    version: 1.0.0-alpha1
   minecraft-server:
   - apiVersion: v2
     created: "2025-08-07T23:35:09.610504555Z"
@@ -55,4 +75,23 @@ entries:
     urls:
     - minecraft-server-1.0.0-alpha1.tgz
     version: 1.0.0-alpha1
-generated: "2025-08-08T18:13:52.991358879Z"
+  - apiVersion: v2
+    created: "2025-08-09T14:25:01.447589623Z"
+    dependencies:
+    - name: minecraft-lib
+      repository: https://clucktopia.github.io/helm-charts
+      version: ~1.0.0
+    description: A flexible Helm chart to run a Minecraft Java Edition server
+    digest: c724f81eecc4636eb549c5080baacfa9b760234d498bd1222c0274b8d65c2684
+    home: https://github.com/clucktopia
+    maintainers:
+    - email: iveahugeship@gmail.com
+      name: iveahugeship
+    name: minecraft-server
+    sources:
+    - https://github.com/itzg/docker-minecraft-server
+    type: application
+    urls:
+    - minecraft-server-1.0.0-alpha1.tgz
+    version: 1.0.0-alpha1
+generated: "2025-08-09T14:25:01.447610041Z"
